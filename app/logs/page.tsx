@@ -1,26 +1,100 @@
 'use client'
 
 import { Clock, Calendar, MapPin, User, Search, Eye, Plus, Edit, Trash2, Star } from 'lucide-react'
+import { useServiceHours } from '@/lib/ServiceHoursContext'
 import { useState } from 'react'
-import dynamic from 'next/dynamic'
+import { ServiceHour } from '@/lib/types'
+import AuthGuard from '@/components/AuthGuard'
 
-// Dynamically import components to avoid SSR issues
-const AuthGuard = dynamic(() => import('@/components/AuthGuard'), { 
-  ssr: false,
-  loading: () => <div className="min-h-screen flex items-center justify-center">Loading...</div>
-})
+export default function ServiceLogs() {
+  const { serviceHours, addServiceHour, updateServiceHour, deleteServiceHour } = useServiceHours()
+  const [selectedEntry, setSelectedEntry] = useState<ServiceHour | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('All')
+  const [sortBy, setSortBy] = useState('date')
+  const [showManualEntryModal, setShowManualEntryModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [editingEntry, setEditingEntry] = useState<ServiceHour | null>(null)
+  const [deletingEntry, setDeletingEntry] = useState<ServiceHour | null>(null)
+  
+  const [manualEntryForm, setManualEntryForm] = useState({
+    title: '',
+    organization: '',
+    description: '',
+    date: '',
+    startTime: '09:00',
+    duration: 60, // duration in minutes
+    category: 'Community Service',
+    notes: '',
+    supervisor: '',
+    location: ''
+  })
+  
+  const [editForm, setEditForm] = useState({
+    title: '',
+    organization: '',
+    description: '',
+    date: '',
+    startTime: '09:00',
+    duration: 60, // duration in minutes
+    category: 'Community Service',
+    notes: '',
+    supervisor: '',
+    location: ''
+  })
 
-function ServiceLogsContent() {
-  try {
-    const { useServiceHours } = require('@/lib/ServiceHoursContext')
-    const { serviceHours = [], addServiceHour, updateServiceHour, deleteServiceHour } = useServiceHours()
-    const [selectedEntry, setSelectedEntry] = useState<any | null>(null)
-    const [searchTerm, setSearchTerm] = useState('')
-    const [selectedCategory, setSelectedCategory] = useState('All')
-    const [sortBy, setSortBy] = useState('date')
-    const [showManualEntryModal, setShowManualEntryModal] = useState(false)
-    
-    const [manualEntryForm, setManualEntryForm] = useState({
+  const categories = ['All', 'Community Service', 'Education', 'Environment', 'Senior Care', 'Healthcare', 'Animal Care', 'Other']
+
+  const formatDuration = (minutes: number) => {
+    const hours = Math.floor(minutes / 60)
+    const mins = minutes % 60
+    if (hours === 0) return `${mins}m`
+    if (mins === 0) return `${hours}h`
+    return `${hours}h ${mins}m`
+  }
+
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date)
+  }
+
+  const filteredAndSortedHours = serviceHours
+    .filter(hour => {
+      const matchesSearch = hour.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           hour.organization.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           hour.description.toLowerCase().includes(searchTerm.toLowerCase())
+      const matchesCategory = selectedCategory === 'All' || hour.category === selectedCategory
+      return matchesSearch && matchesCategory
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'date':
+          return new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
+        case 'duration':
+          return b.duration - a.duration
+        case 'title':
+          return a.title.localeCompare(b.title)
+        case 'organization':
+          return a.organization.localeCompare(b.organization)
+        default:
+          return 0
+      }
+    })
+
+  const totalFilteredHours = filteredAndSortedHours.reduce((sum, hour) => sum + hour.duration, 0)
+
+  const getCategoryColor = (category: string) => {
+    return 'bg-gray-100 text-gray-800 border border-gray-200'
+  }
+
+  const resetManualEntryForm = () => {
+    setManualEntryForm({
       title: '',
       organization: '',
       description: '',
@@ -32,327 +106,658 @@ function ServiceLogsContent() {
       supervisor: '',
       location: ''
     })
+  }
 
-    const categories = ['All', 'Community Service', 'Education', 'Environment', 'Senior Care', 'Healthcare', 'Animal Care', 'Other']
+  const resetEditForm = () => {
+    setEditForm({
+      title: '',
+      organization: '',
+      description: '',
+      date: '',
+      startTime: '09:00',
+      duration: 60,
+      category: 'Community Service',
+      notes: '',
+      supervisor: '',
+      location: ''
+    })
+  }
 
-    const formatDuration = (minutes: number) => {
-      const hours = Math.floor(minutes / 60)
-      const mins = minutes % 60
-      if (hours === 0) return `${mins}m`
-      if (mins === 0) return `${hours}h`
-      return `${hours}h ${mins}m`
-    }
-
-    const formatDate = (date: Date) => {
-      return new Intl.DateTimeFormat('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      }).format(date)
-    }
-
-    const filteredAndSortedHours = serviceHours
-      .filter((hour: any) => {
-        const matchesSearch = hour.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                             hour.organization?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                             hour.description?.toLowerCase().includes(searchTerm.toLowerCase())
-        const matchesCategory = selectedCategory === 'All' || hour.category === selectedCategory
-        return matchesSearch && matchesCategory
-      })
-      .sort((a: any, b: any) => {
-        switch (sortBy) {
-          case 'date':
-            return new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
-          case 'duration':
-            return b.duration - a.duration
-          case 'title':
-            return a.title?.localeCompare(b.title) || 0
-          case 'organization':
-            return a.organization?.localeCompare(b.organization) || 0
-          default:
-            return 0
-        }
-      })
-
-    const totalFilteredHours = filteredAndSortedHours.reduce((sum: number, hour: any) => sum + (hour.duration || 0), 0)
-
-    const handleManualEntrySubmit = async (e: React.FormEvent) => {
-      e.preventDefault()
+  const handleManualEntrySubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    try {
+      // Combine date and time for start time
+      const startDateTime = new Date(`${manualEntryForm.date}T${manualEntryForm.startTime}`)
+      // Calculate end time by adding duration in minutes
+      const endDateTime = new Date(startDateTime.getTime() + manualEntryForm.duration * 60 * 1000)
       
-      try {
-        const startDateTime = new Date(`${manualEntryForm.date}T${manualEntryForm.startTime}`)
-        const endDateTime = new Date(startDateTime.getTime() + manualEntryForm.duration * 60 * 1000)
-        
-        const newServiceHour = {
-          title: manualEntryForm.title,
-          organization: manualEntryForm.organization,
-          description: manualEntryForm.description,
-          startTime: startDateTime,
-          endTime: endDateTime,
-          duration: manualEntryForm.duration,
-          category: manualEntryForm.category,
-          isCompleted: true,
-          notes: manualEntryForm.notes || undefined,
-          supervisor: manualEntryForm.supervisor || undefined,
-          location: manualEntryForm.location || undefined
-        }
-        
-        await addServiceHour(newServiceHour)
-        setShowManualEntryModal(false)
-        setManualEntryForm({
-          title: '',
-          organization: '',
-          description: '',
-          date: '',
-          startTime: '09:00',
-          duration: 60,
-          category: 'Community Service',
-          notes: '',
-          supervisor: '',
-          location: ''
-        })
-      } catch (error) {
-        console.error('Error adding manual service hour:', error)
-        alert('Error adding service hour. Please try again.')
+      const newServiceHour: Omit<ServiceHour, 'id'> = {
+        title: manualEntryForm.title,
+        organization: manualEntryForm.organization,
+        description: manualEntryForm.description,
+        startTime: startDateTime,
+        endTime: endDateTime,
+        duration: manualEntryForm.duration,
+        category: manualEntryForm.category,
+        isCompleted: true,
+        notes: manualEntryForm.notes || undefined,
+        supervisor: manualEntryForm.supervisor || undefined,
+        location: manualEntryForm.location || undefined
       }
+      
+      await addServiceHour(newServiceHour)
+      setShowManualEntryModal(false)
+      resetManualEntryForm()
+    } catch (error) {
+      console.error('Error adding manual service hour:', error)
+      alert('Error adding service hour. Please try again.')
     }
+  }
 
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 px-4 py-6">
+  const handleEditClick = (entry: ServiceHour) => {
+    setEditingEntry(entry)
+    // Populate form with existing data
+    const startDate = entry.startTime ? new Date(entry.startTime) : new Date()
+    
+    setEditForm({
+      title: entry.title,
+      organization: entry.organization,
+      description: entry.description,
+      date: startDate.toISOString().split('T')[0],
+      startTime: startDate.toTimeString().slice(0, 5),
+      duration: entry.duration,
+      category: entry.category,
+      notes: entry.notes || '',
+      supervisor: entry.supervisor || '',
+      location: entry.location || ''
+    })
+    setShowEditModal(true)
+  }
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!editingEntry) return
+    
+    try {
+      // Combine date and time for start time
+      const startDateTime = new Date(`${editForm.date}T${editForm.startTime}`)
+      // Calculate end time by adding duration in minutes
+      const endDateTime = new Date(startDateTime.getTime() + editForm.duration * 60 * 1000)
+      
+      const updates: Partial<ServiceHour> = {
+        title: editForm.title,
+        organization: editForm.organization,
+        description: editForm.description,
+        startTime: startDateTime,
+        endTime: endDateTime,
+        duration: editForm.duration,
+        category: editForm.category,
+        notes: editForm.notes || undefined,
+        supervisor: editForm.supervisor || undefined,
+        location: editForm.location || undefined
+      }
+      
+      await updateServiceHour(editingEntry.id, updates)
+      setShowEditModal(false)
+      setEditingEntry(null)
+      resetEditForm()
+    } catch (error) {
+      console.error('Error updating service hour:', error)
+      alert('Error updating service hour. Please try again.')
+    }
+  }
+
+  const handleDeleteClick = (entry: ServiceHour) => {
+    setDeletingEntry(entry)
+    setShowDeleteModal(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingEntry) return
+    
+    try {
+      await deleteServiceHour(deletingEntry.id)
+      setShowDeleteModal(false)
+      setDeletingEntry(null)
+    } catch (error) {
+      console.error('Error deleting service hour:', error)
+      alert('Error deleting service hour. Please try again.')
+    }
+  }
+
+  return (
+    <AuthGuard>
+      <div className="min-h-screen px-4 py-6 bg-gradient-to-br from-canvas-50 to-canvas-100">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent mb-4">
-              Service Hours Log
+            <h1 className="text-3xl font-bold text-neutral-900 mb-3">
+              Service Logs
             </h1>
-            <p className="text-xl text-gray-600">Track and manage all your community service activities</p>
+            <p className="text-lg font-normal text-gray-600">
+              Track your community impact with <span className="font-semibold">QuickServe</span>
+            </p>
+            <div className="mt-3 w-20 h-0.5 bg-gradient-to-r from-gray-300 to-gray-500 mx-auto rounded-full"></div>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="backdrop-blur-md bg-white/70 rounded-2xl p-6 border border-white/20 shadow-xl">
-              <div className="flex items-center">
-                <Clock className="h-10 w-10 text-blue-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Hours</p>
-                  <p className="text-2xl font-bold text-gray-900">{Math.floor(totalFilteredHours / 60)}h {totalFilteredHours % 60}m</p>
+          {/* Summary Stats with enhanced design */}
+          <div className="bg-neutral-50 border border-canvas-100 p-6 rounded-xl mb-8 shadow-sm">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="text-center p-4 rounded-lg">
+                <div className="flex items-center justify-center mb-2">
+                  <Clock className="w-6 h-6 text-gray-600 mr-2" />
+                  <p className="text-2xl font-bold text-neutral-900">
+                    {filteredAndSortedHours.length}
+                  </p>
                 </div>
+                <p className="text-gray-600 font-semibold text-sm">Total Sessions</p>
               </div>
-            </div>
-            
-            <div className="backdrop-blur-md bg-white/70 rounded-2xl p-6 border border-white/20 shadow-xl">
-              <div className="flex items-center">
-                <Calendar className="h-10 w-10 text-green-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Sessions</p>
-                  <p className="text-2xl font-bold text-gray-900">{filteredAndSortedHours.length}</p>
+              <div className="text-center p-4 rounded-lg">
+                <div className="flex items-center justify-center mb-2">
+                  <Clock className="w-6 h-6 text-gray-600 mr-2" />
+                  <p className="text-2xl font-bold text-neutral-900">
+                    {Math.round(totalFilteredHours / 60 * 10) / 10}h
+                  </p>
                 </div>
+                <p className="text-gray-600 font-semibold text-sm">Total Hours</p>
               </div>
-            </div>
-
-            <div className="backdrop-blur-md bg-white/70 rounded-2xl p-6 border border-white/20 shadow-xl">
-              <div className="flex items-center">
-                <Star className="h-10 w-10 text-purple-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Categories</p>
-                  <p className="text-2xl font-bold text-gray-900">{new Set(serviceHours.map((h: any) => h.category)).size}</p>
+              <div className="text-center p-4 rounded-lg">
+                <div className="flex items-center justify-center mb-2">
+                  <Clock className="w-6 h-6 text-gray-600 mr-2" />
+                  <p className="text-2xl font-bold text-neutral-900">
+                    {Math.round(totalFilteredHours / filteredAndSortedHours.length || 0)}m
+                  </p>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Controls */}
-          <div className="backdrop-blur-md bg-white/70 rounded-2xl p-6 border border-white/20 shadow-xl mb-8">
-            <div className="flex flex-col md:flex-row gap-4 mb-6">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    placeholder="Search by title, organization, or description..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-              
-              <div className="flex gap-4">
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  {categories.map(category => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}
-                </select>
-                
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="date">Sort by Date</option>
-                  <option value="duration">Sort by Duration</option>
-                  <option value="title">Sort by Title</option>
-                  <option value="organization">Sort by Organization</option>
-                </select>
-                
-                <button
-                  onClick={() => setShowManualEntryModal(true)}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center gap-2"
-                >
-                  <Plus className="w-5 h-5" />
-                  Add Entry
-                </button>
+                <p className="text-gray-600 font-semibold text-sm">Avg Session</p>
               </div>
             </div>
           </div>
 
-          {/* Service Hours List */}
+          {/* Search & Controls - Split into two cards */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Search & Filter Card */}
+            <div className="bg-white border border-canvas-100 rounded-xl shadow-sm overflow-hidden">
+              {/* Header */}
+              <div className="px-6 py-4 border-b border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold text-black">Search & Filter</h2>
+                    <p className="text-sm font-normal text-gray-600">Find your service entries</p>
+                  </div>
+                  <div className="hidden md:flex items-center text-gray-400">
+                    <Search className="w-5 h-5" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Search Controls */}
+              <div className="p-6">
+                {/* Primary Search Bar */}
+                <div className="mb-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input
+                      type="text"
+                      placeholder="Search by title, organization, or description..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all text-sm font-normal"
+                    />
+                    {searchTerm && (
+                      <button
+                        onClick={() => setSearchTerm('')}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Filter Controls */}
+                <div className="space-y-4">
+                  {/* Category Filter */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Category
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={selectedCategory}
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all appearance-none bg-white text-sm font-normal"
+                      >
+                        {categories.map(category => (
+                          <option key={category} value={category}>
+                            {category}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sort By */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Sort By
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all appearance-none bg-white text-sm font-normal"
+                      >
+                        <option value="date">Most Recent</option>
+                        <option value="duration">Duration</option>
+                        <option value="title">Title</option>
+                        <option value="organization">Organization</option>
+                      </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Clear Button */}
+                  <button
+                    onClick={() => {
+                      setSearchTerm('')
+                      setSelectedCategory('All')
+                      setSortBy('date')
+                    }}
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all text-sm font-semibold text-gray-700 flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Clear All Filters
+                  </button>
+                </div>
+
+                {/* Active Filters Display */}
+                {(searchTerm || selectedCategory !== 'All' || sortBy !== 'date') && (
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-xs font-medium text-gray-600">Active:</span>
+                      {searchTerm && (
+                        <span className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
+                          Search: "{searchTerm}"
+                          <button onClick={() => setSearchTerm('')} className="hover:text-blue-900">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </span>
+                      )}
+                      {selectedCategory !== 'All' && (
+                        <span className="inline-flex items-center gap-2 px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm">
+                          Category: {selectedCategory}
+                          <button onClick={() => setSelectedCategory('All')} className="hover:text-green-900">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </span>
+                      )}
+                      {sortBy !== 'date' && (
+                        <span className="inline-flex items-center gap-2 px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-sm">
+                          Sort: {sortBy === 'duration' ? 'Duration' : sortBy === 'title' ? 'Title' : 'Organization'}
+                          <button onClick={() => setSortBy('date')} className="hover:text-purple-900">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Add New Entry Card */}
+            <div className="bg-neutral-50 border border-canvas-100 rounded-xl shadow-sm overflow-hidden">
+              {/* Header */}
+              <div className="px-6 py-4 border-b border-canvas-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold text-neutral-900">Log Your Hours</h2>
+                    <p className="text-sm font-normal text-gray-600">Add a new service entry</p>
+                  </div>
+                  <div className="hidden md:flex items-center text-gray-400">
+                    <Plus className="w-5 h-5" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="p-6">
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold text-neutral-900 mb-6">Log Your Hours</h3>
+                  <button
+                    onClick={() => setShowManualEntryModal(true)}
+                    className="bg-gray-700 text-white px-6 py-3 rounded text-sm font-semibold hover:bg-gray-800 transition-colors flex items-center gap-2 mx-auto"
+                  >
+                    <Plus className="w-5 h-5" />
+                    Add Service Entry
+                  </button>
+                  <p className="text-xs font-normal text-gray-500 mt-3">
+                    Manually add service hours you've completed
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Service Hours List with enhanced cards */}
           <div className="space-y-4">
             {filteredAndSortedHours.length === 0 ? (
-              <div className="backdrop-blur-md bg-white/70 rounded-2xl p-12 border border-white/20 shadow-xl text-center">
-                <Clock className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">No Service Hours Found</h3>
-                <p className="text-gray-600 mb-6">Start by adding your first service hour entry</p>
-                <button
-                  onClick={() => setShowManualEntryModal(true)}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
-                >
-                  Add Your First Entry
-                </button>
+              <div className="bg-white border border-gray-200 p-12 rounded-xl text-center shadow-sm">
+                <Clock className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-black mb-2">
+                  No service hours found
+                </h3>
+                <p className="text-gray-600">
+                  Try adjusting your search or filter criteria, or add your first entry!
+                </p>
               </div>
             ) : (
-              filteredAndSortedHours.map((hour: any, index: number) => (
-                <div key={hour.id || index} className="backdrop-blur-md bg-white/70 rounded-2xl p-6 border border-white/20 shadow-xl hover:shadow-2xl transition-shadow">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between mb-2">
-                        <h3 className="text-xl font-bold text-gray-900">{hour.title}</h3>
-                        <div className="flex gap-2">
-                          <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                            {hour.category}
-                          </span>
-                          <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                            {formatDuration(hour.duration || 0)}
-                          </span>
+              filteredAndSortedHours.map((hour) => (
+                <div
+                  key={hour.id}
+                  className="bg-white border border-gray-200 p-6 rounded-xl hover:bg-gray-50 transition-all shadow-sm hover:shadow-md"
+                >
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between">
+                    <div className="flex-1 mb-4 lg:mb-0">
+                      <div className="flex items-start justify-between mb-3">
+                        <h3 className="text-xl font-semibold text-black mb-1">
+                          {hour.title}
+                        </h3>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getCategoryColor(hour.category)}`}>
+                          {hour.category}
+                        </span>
+                      </div>
+                      
+                      <p className="text-base text-gray-700 mb-2">{hour.organization}</p>
+                      <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                        {hour.description}
+                      </p>
+                      
+                      <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-4 h-4" />
+                          {formatDate(hour.startTime)}
                         </div>
+                        {hour.location && (
+                          <div className="flex items-center gap-1">
+                            <MapPin className="w-4 h-4" />
+                            {hour.location}
+                          </div>
+                        )}
+                        {hour.supervisor && (
+                          <div className="flex items-center gap-1">
+                            <User className="w-4 h-4" />
+                            {hour.supervisor}
+                          </div>
+                        )}
                       </div>
-                      
-                      <div className="flex items-center text-gray-600 mb-2">
-                        <MapPin className="w-4 h-4 mr-2" />
-                        <span className="font-medium">{hour.organization}</span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between lg:flex-col lg:items-end lg:justify-center">
+                      <div className="text-right mb-3 lg:mb-4">
+                        <p className="text-2xl font-bold text-black">
+                          {formatDuration(hour.duration)}
+                        </p>
+                        <p className="text-xs text-gray-500 font-medium">Duration</p>
                       </div>
-                      
-                      <div className="flex items-center text-gray-600 mb-2">
-                        <Calendar className="w-4 h-4 mr-2" />
-                        <span>{formatDate(new Date(hour.startTime))}</span>
+                      <div className="flex items-center gap-1">
+                        <button 
+                          className="text-gray-400 hover:text-blue-600 p-2 rounded-lg hover:bg-blue-50 transition-all"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleEditClick(hour)
+                          }}
+                          title="Edit entry"
+                        >
+                          <Edit className="w-5 h-5" />
+                        </button>
+                        <button 
+                          className="text-gray-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-all"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDeleteClick(hour)
+                          }}
+                          title="Delete entry"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                        <button 
+                          className="text-gray-400 hover:text-black p-3 rounded-xl hover:bg-gray-100 transition-all"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedEntry(hour)
+                          }}
+                          title="View details"
+                        >
+                          <Eye className="w-6 h-6" />
+                        </button>
                       </div>
-                      
-                      {hour.description && (
-                        <p className="text-gray-700 mt-3">{hour.description}</p>
-                      )}
-                      
-                      {hour.notes && (
-                        <p className="text-gray-600 text-sm mt-2 italic">Notes: {hour.notes}</p>
-                      )}
                     </div>
                   </div>
                 </div>
               ))
             )}
           </div>
+        </div>
 
-          {/* Manual Entry Modal */}
-          {showManualEntryModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-              <div className="backdrop-blur-md bg-white/90 rounded-2xl p-8 w-full max-w-2xl border border-white/20 shadow-2xl max-h-[90vh] overflow-y-auto">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Add Service Hours Entry</h2>
-                
-                <form onSubmit={handleManualEntrySubmit} className="space-y-4">
+        {/* Service Hour Detail Modal */}
+        {selectedEntry && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
+              <div className="flex items-start justify-between mb-8">
+                <div>
+                  <h2 className="text-3xl font-bold text-black mb-3">
+                    {selectedEntry.title}
+                  </h2>
+                  <span className={`px-4 py-2 rounded-full text-sm font-medium ${getCategoryColor(selectedEntry.category)}`}>
+                    {selectedEntry.category}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setSelectedEntry(null)}
+                  className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100 transition-all"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="space-y-8">
+                {/* Organization & Duration */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-gray-50 p-6 rounded-xl">
+                    <h3 className="font-semibold text-black mb-2">Organization</h3>
+                    <p className="text-gray-700">{selectedEntry.organization}</p>
+                  </div>
+                  <div className="bg-gray-50 p-6 rounded-xl">
+                    <h3 className="font-semibold text-black mb-2">Duration</h3>
+                    <p className="text-2xl font-bold text-black">{formatDuration(selectedEntry.duration)}</p>
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className="bg-gray-50 p-6 rounded-xl">
+                  <h3 className="font-semibold text-black mb-3">Description</h3>
+                  <p className="text-gray-700 leading-relaxed">{selectedEntry.description}</p>
+                </div>
+
+                {/* Time Details */}
+                <div className="bg-gray-50 p-6 rounded-xl">
+                  <h3 className="font-semibold text-black mb-3">Time Details</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Service Title *</label>
-                      <input
-                        type="text"
-                        required
-                        value={manualEntryForm.title}
-                        onChange={(e) => setManualEntryForm(prev => ({ ...prev, title: e.target.value }))}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="e.g. Food Bank Volunteer"
-                      />
+                      <p className="text-sm text-gray-500 mb-1">Start Time</p>
+                      <p className="text-gray-700">{formatDate(selectedEntry.startTime)}</p>
                     </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Organization *</label>
-                      <input
-                        type="text"
-                        required
-                        value={manualEntryForm.organization}
-                        onChange={(e) => setManualEntryForm(prev => ({ ...prev, organization: e.target.value }))}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="e.g. Local Food Bank"
-                      />
-                    </div>
+                    {selectedEntry.endTime && (
+                      <div>
+                        <p className="text-sm text-gray-500 mb-1">End Time</p>
+                        <p className="text-gray-700">{formatDate(selectedEntry.endTime)}</p>
+                      </div>
+                    )}
                   </div>
-                  
+                </div>
+
+                {/* Additional Info */}
+                {(selectedEntry.location || selectedEntry.supervisor || selectedEntry.notes) && (
+                  <div className="space-y-4">
+                    {selectedEntry.location && (
+                      <div className="bg-gray-50 p-6 rounded-xl">
+                        <h3 className="font-semibold text-black mb-2">Location</h3>
+                        <p className="text-gray-700">{selectedEntry.location}</p>
+                      </div>
+                    )}
+                    {selectedEntry.supervisor && (
+                      <div className="bg-gray-50 p-6 rounded-xl">
+                        <h3 className="font-semibold text-black mb-2">Supervisor</h3>
+                        <p className="text-gray-700">{selectedEntry.supervisor}</p>
+                      </div>
+                    )}
+                    {selectedEntry.notes && (
+                      <div className="bg-gray-50 p-6 rounded-xl">
+                        <h3 className="font-semibold text-black mb-3">Notes</h3>
+                        <p className="text-gray-700 leading-relaxed">{selectedEntry.notes}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Manual Entry Modal */}
+        {showManualEntryModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
+              <h3 className="text-2xl font-bold text-black mb-8">
+                Quick Add Service Entry
+              </h3>
+              
+              <form onSubmit={handleManualEntrySubmit} className="space-y-6">
+                {/* Title and Organization */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                    <textarea
-                      value={manualEntryForm.description}
-                      onChange={(e) => setManualEntryForm(prev => ({ ...prev, description: e.target.value }))}
-                      rows={3}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                      placeholder="Describe what you did..."
+                    <label className="block text-sm font-semibold text-black mb-2">
+                      Service Title *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={manualEntryForm.title}
+                      onChange={(e) => setManualEntryForm(prev => ({ ...prev, title: e.target.value }))}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
+                      placeholder="What service did you perform?"
                     />
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Date *</label>
-                      <input
-                        type="date"
-                        required
-                        value={manualEntryForm.date}
-                        onChange={(e) => setManualEntryForm(prev => ({ ...prev, date: e.target.value }))}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Start Time *</label>
-                      <input
-                        type="time"
-                        required
-                        value={manualEntryForm.startTime}
-                        onChange={(e) => setManualEntryForm(prev => ({ ...prev, startTime: e.target.value }))}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Duration (minutes) *</label>
-                      <input
-                        type="number"
-                        required
-                        min="1"
-                        value={manualEntryForm.duration}
-                        onChange={(e) => setManualEntryForm(prev => ({ ...prev, duration: parseInt(e.target.value) || 60 }))}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-black mb-2">
+                      Organization *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={manualEntryForm.organization}
+                      onChange={(e) => setManualEntryForm(prev => ({ ...prev, organization: e.target.value }))}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
+                      placeholder="Which organization?"
+                    />
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-semibold text-black mb-2">
+                    Description *
+                  </label>
+                  <textarea
+                    required
+                    value={manualEntryForm.description}
+                    onChange={(e) => setManualEntryForm(prev => ({ ...prev, description: e.target.value }))}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
+                    rows={3}
+                    placeholder="Describe what you did..."
+                  />
+                </div>
+
+                {/* Date, Time, and Duration */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-black mb-2">
+                      Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={manualEntryForm.date}
+                      onChange={(e) => setManualEntryForm(prev => ({ ...prev, date: e.target.value }))}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
+                    />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                    <label className="block text-sm font-semibold text-black mb-2">
+                      Start Time *
+                    </label>
+                    <input
+                      type="time"
+                      required
+                      value={manualEntryForm.startTime}
+                      onChange={(e) => setManualEntryForm(prev => ({ ...prev, startTime: e.target.value }))}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-black mb-2">
+                      Duration (minutes) *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min="1"
+                      value={manualEntryForm.duration}
+                      onChange={(e) => setManualEntryForm(prev => ({ ...prev, duration: parseInt(e.target.value) || 60 }))}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
+                      placeholder="60"
+                    />
+                  </div>
+                </div>
+
+                {/* Category and Supervisor */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-black mb-2">
+                      Category *
+                    </label>
                     <select
+                      required
                       value={manualEntryForm.category}
                       onChange={(e) => setManualEntryForm(prev => ({ ...prev, category: e.target.value }))}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
                     >
                       {categories.slice(1).map(category => (
                         <option key={category} value={category}>{category}</option>
@@ -360,46 +765,289 @@ function ServiceLogsContent() {
                     </select>
                   </div>
                   
-                  <div className="flex gap-4 pt-4">
-                    <button
-                      type="button"
-                      onClick={() => setShowManualEntryModal(false)}
-                      className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-3 rounded-lg font-semibold transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 py-3 rounded-lg font-semibold transition-colors"
-                    >
-                      Add Entry
-                    </button>
+                  <div>
+                    <label className="block text-sm font-semibold text-black mb-2">
+                      Supervisor (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={manualEntryForm.supervisor}
+                      onChange={(e) => setManualEntryForm(prev => ({ ...prev, supervisor: e.target.value }))}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
+                      placeholder="Supervisor name"
+                    />
                   </div>
-                </form>
+                </div>
+
+                {/* Location */}
+                <div>
+                  <label className="block text-sm font-semibold text-black mb-2">
+                    Location (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={manualEntryForm.location}
+                    onChange={(e) => setManualEntryForm(prev => ({ ...prev, location: e.target.value }))}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
+                    placeholder="Service location"
+                  />
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <label className="block text-sm font-semibold text-black mb-2">
+                    Notes (Optional)
+                  </label>
+                  <textarea
+                    value={manualEntryForm.notes}
+                    onChange={(e) => setManualEntryForm(prev => ({ ...prev, notes: e.target.value }))}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
+                    rows={3}
+                    placeholder="Additional notes about your service..."
+                  />
+                </div>
+                
+                {/* Buttons */}
+                <div className="flex gap-4 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowManualEntryModal(false)
+                      resetManualEntryForm()
+                    }}
+                    className="flex-1 px-6 py-3 border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-all text-sm font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 bg-gray-700 hover:bg-gray-800 text-white px-6 py-3 rounded-xl transition-colors text-sm font-medium"
+                  >
+                    Add Service Entry
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Modal */}
+        {showEditModal && editingEntry && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
+              <h3 className="text-2xl font-bold text-black mb-8">
+                Edit Service Entry
+              </h3>
+              
+              <form onSubmit={handleEditSubmit} className="space-y-6">
+                {/* Title and Organization */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-black mb-2">
+                      Service Title *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editForm.title}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
+                      placeholder="What service did you perform?"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-black mb-2">
+                      Organization *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editForm.organization}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, organization: e.target.value }))}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
+                      placeholder="Which organization?"
+                    />
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-semibold text-black mb-2">
+                    Description *
+                  </label>
+                  <textarea
+                    required
+                    value={editForm.description}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
+                    rows={3}
+                    placeholder="Describe what you did..."
+                  />
+                </div>
+
+                {/* Date, Time, and Duration */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-black mb-2">
+                      Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={editForm.date}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, date: e.target.value }))}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-black mb-2">
+                      Start Time *
+                    </label>
+                    <input
+                      type="time"
+                      required
+                      value={editForm.startTime}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, startTime: e.target.value }))}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-black mb-2">
+                      Duration (minutes) *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min="1"
+                      value={editForm.duration}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, duration: parseInt(e.target.value) || 60 }))}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
+                      placeholder="60"
+                    />
+                  </div>
+                </div>
+
+                {/* Category and Supervisor */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-black mb-2">
+                      Category *
+                    </label>
+                    <select
+                      required
+                      value={editForm.category}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, category: e.target.value }))}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
+                    >
+                      {categories.slice(1).map(category => (
+                        <option key={category} value={category}>{category}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-black mb-2">
+                      Supervisor (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={editForm.supervisor}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, supervisor: e.target.value }))}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
+                      placeholder="Supervisor name"
+                    />
+                  </div>
+                </div>
+
+                {/* Location */}
+                <div>
+                  <label className="block text-sm font-semibold text-black mb-2">
+                    Location (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.location}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, location: e.target.value }))}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
+                    placeholder="Service location"
+                  />
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <label className="block text-sm font-semibold text-black mb-2">
+                    Notes (Optional)
+                  </label>
+                  <textarea
+                    value={editForm.notes}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, notes: e.target.value }))}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
+                    rows={3}
+                    placeholder="Additional notes about your service..."
+                  />
+                </div>
+                
+                {/* Buttons */}
+                <div className="flex gap-4 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowEditModal(false)
+                      setEditingEntry(null)
+                      resetEditForm()
+                    }}
+                    className="flex-1 px-6 py-3 border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-all text-sm font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 bg-gray-700 hover:bg-gray-800 text-white px-6 py-3 rounded-xl transition-colors text-sm font-medium"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && deletingEntry && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl">
+              <h3 className="text-xl font-bold text-black mb-6">
+                Delete Service Entry
+              </h3>
+              
+              <p className="text-gray-600 mb-8 leading-relaxed">
+                Are you sure you want to delete "<strong>{deletingEntry.title}</strong>"? This action cannot be undone.
+              </p>
+              
+              <div className="flex gap-4">
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false)
+                    setDeletingEntry(null)
+                  }}
+                  className="flex-1 px-6 py-3 border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-all text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteConfirm}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl transition-all text-sm font-medium shadow-lg"
+                >
+                  Delete Entry
+                </button>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
-    )
-  } catch (error) {
-    console.error('Error in ServiceLogsContent:', error)
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center px-4">
-        <div className="backdrop-blur-md bg-white/70 rounded-2xl p-8 border border-white/20 shadow-xl text-center max-w-md">
-          <Clock className="h-16 w-16 text-blue-600 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Service Hours</h1>
-          <p className="text-gray-600">Please wait while we load your service hours...</p>
-        </div>
-      </div>
-    )
-  }
-}
-
-export default function ServiceLogs() {
-  return (
-    <AuthGuard>
-      <ServiceLogsContent />
     </AuthGuard>
   )
 } 

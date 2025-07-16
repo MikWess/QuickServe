@@ -17,14 +17,24 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   useEffect(() => {
     // Hide loading screen once auth is resolved
     if (!authLoading) {
-      // Add a small delay for better UX
+      // Very short delay for smooth transition
       const timer = setTimeout(() => {
         hideLoading()
-      }, 1500)
+      }, 300)
       
       return () => clearTimeout(timer)
     }
   }, [authLoading, hideLoading])
+
+  // Force hide loading after 2 seconds maximum to prevent infinite loading
+  useEffect(() => {
+    const maxTimer = setTimeout(() => {
+      console.log('Force hiding loading screen after timeout')
+      hideLoading()
+    }, 2000)
+
+    return () => clearTimeout(maxTimer)
+  }, [hideLoading])
 
   if (isLoading) {
     return <LoadingScreen />

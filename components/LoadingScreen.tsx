@@ -28,14 +28,13 @@ export default function LoadingScreen({
           </h1>
         </div>
 
-        {/* Loading Bar - Just the Filling Animation */}
+        {/* Loading Bar - Single completion animation */}
         <div className="w-80 h-1 bg-white/30 rounded-full overflow-hidden">
           <motion.div
             initial={{ width: '0%' }}
             animate={{ width: '100%' }}
             transition={{
-              duration: 2,
-              repeat: Infinity,
+              duration: 1.8,
               ease: "easeInOut"
             }}
             className="h-full bg-white rounded-full"
