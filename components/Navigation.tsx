@@ -54,12 +54,9 @@ export default function Navigation() {
           {/* Auth buttons */}
           {user ? (
             <div className="flex items-center space-x-6">
-              <span className="text-sm text-gray-600">
-                {profile?.displayName || user.displayName || user.email}
-              </span>
               <button
                 onClick={logout}
-                className="text-sm text-gray-600 hover:text-black transition-colors"
+                className="bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-2 rounded-lg hover:from-red-700 hover:to-red-800 transition-all text-sm font-medium shadow-sm hover:shadow-md transform hover:scale-105"
               >
                 Sign Out
               </button>
@@ -109,15 +106,12 @@ export default function Navigation() {
             {/* Mobile Auth buttons */}
             {user ? (
               <>
-                <span className="text-sm text-gray-600">
-                  {profile?.displayName || user.displayName || user.email}
-                </span>
                 <button
                   onClick={() => {
                     logout()
                     setIsMobileMenuOpen(false)
                   }}
-                  className="text-sm text-gray-600 text-left"
+                  className="bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-2 rounded-lg hover:from-red-700 hover:to-red-800 transition-all text-sm font-medium shadow-sm"
                 >
                   Sign Out
                 </button>

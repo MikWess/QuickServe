@@ -1,6 +1,6 @@
 'use client'
 
-import { Clock, Calendar, MapPin, User, Search, Eye, Plus, Edit, Trash2, Sparkles, Star } from 'lucide-react'
+import { Clock, Calendar, MapPin, User, Search, Eye, Plus, Edit, Trash2, Star } from 'lucide-react'
 import { useServiceHours } from '@/lib/ServiceHoursContext'
 import { useState } from 'react'
 import { ServiceHour } from '@/lib/types'
@@ -231,11 +231,10 @@ export default function ServiceLogs() {
     <AuthGuard>
       <div className="min-h-screen px-4 py-6 bg-gradient-to-br from-white to-gray-50">
         <div className="max-w-6xl mx-auto">
-          {/* Header with sparkle decoration */}
-          <div className="text-center mb-8 relative">
-            <h1 className="text-3xl font-bold text-black mb-3 relative">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-black mb-3">
               Service Logs
-              <Sparkles className="w-6 h-6 text-gray-400 absolute -top-1 -right-6" />
             </h1>
             <p className="text-lg text-gray-600">
               Track your community impact with <span className="font-semibold">QuickServe</span>
@@ -276,161 +275,190 @@ export default function ServiceLogs() {
             </div>
           </div>
 
-          {/* Search & Controls */}
-          <div className="bg-white border border-gray-200 rounded-xl mb-8 shadow-sm overflow-hidden">
-            {/* Header */}
-            <div className="px-6 py-4 border-b border-gray-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold text-black">Search & Filter</h2>
-                  <p className="text-sm text-gray-600">Find or add service entries</p>
-                </div>
-                <div className="hidden md:flex items-center text-gray-400">
-                  <Sparkles className="w-5 h-5" />
-                </div>
-              </div>
-            </div>
-
-            {/* Main Controls */}
-            <div className="p-6">
-              {/* Primary Search Bar */}
-              <div className="mb-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <input
-                    type="text"
-                    placeholder="Search by title, organization, or description..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all text-sm"
-                  />
-                  {searchTerm && (
-                    <button
-                      onClick={() => setSearchTerm('')}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
+          {/* Search & Controls - Split into two cards */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Search & Filter Card */}
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+              {/* Header */}
+              <div className="px-6 py-4 border-b border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold text-black">Search & Filter</h2>
+                    <p className="text-sm text-gray-600">Find your service entries</p>
+                  </div>
+                  <div className="hidden md:flex items-center text-gray-400">
+                    <Search className="w-5 h-5" />
+                  </div>
                 </div>
               </div>
 
-              {/* Filters and Actions Row - More Horizontal Layout */}
-              <div className="flex flex-wrap items-end gap-4">
-                {/* Category Filter */}
-                <div className="flex-1 min-w-48">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Category
-                  </label>
+              {/* Search Controls */}
+              <div className="p-6">
+                {/* Primary Search Bar */}
+                <div className="mb-4">
                   <div className="relative">
-                    <select
-                      value={selectedCategory}
-                      onChange={(e) => setSelectedCategory(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all appearance-none bg-white text-sm"
-                    >
-                      {categories.map(category => (
-                        <option key={category} value={category}>
-                          {category === 'All' ? 'All Categories' : category}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input
+                      type="text"
+                      placeholder="Search by title, organization, or description..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all text-sm"
+                    />
+                    {searchTerm && (
+                      <button
+                        onClick={() => setSearchTerm('')}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
                 </div>
 
-                {/* Sort By */}
-                <div className="flex-1 min-w-48">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Sort By
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all appearance-none bg-white text-sm"
-                    >
-                      <option value="date">Most Recent</option>
-                      <option value="duration">Duration</option>
-                      <option value="title">Title</option>
-                      <option value="organization">Organization</option>
-                    </select>
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
+                {/* Filter Controls */}
+                <div className="space-y-4">
+                  {/* Category Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Category
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={selectedCategory}
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all appearance-none bg-white text-sm"
+                      >
+                        {categories.map(category => (
+                          <option key={category} value={category}>
+                            {category === 'All' ? 'All Categories' : category}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Action Buttons */}
-                <div className="flex gap-2">
+                  {/* Sort By */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Sort By
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all appearance-none bg-white text-sm"
+                      >
+                        <option value="date">Most Recent</option>
+                        <option value="duration">Duration</option>
+                        <option value="title">Title</option>
+                        <option value="organization">Organization</option>
+                      </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Clear Button */}
                   <button
                     onClick={() => {
                       setSearchTerm('')
                       setSelectedCategory('All')
                       setSortBy('date')
                     }}
-                    className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all text-sm font-medium text-gray-700 flex items-center gap-2"
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all text-sm font-medium text-gray-700 flex items-center justify-center gap-2"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
-                    Clear
+                    Clear All Filters
                   </button>
-                  <button
-                    onClick={() => setShowManualEntryModal(true)}
-                    className="bg-gradient-to-r from-gray-900 to-black text-white px-4 py-2 rounded-lg hover:from-black hover:to-gray-900 transition-all text-sm font-medium flex items-center gap-2 shadow-sm hover:shadow-md transform hover:scale-105"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add Entry
-                  </button>
+                </div>
+
+                {/* Active Filters Display */}
+                {(searchTerm || selectedCategory !== 'All' || sortBy !== 'date') && (
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-xs font-medium text-gray-600">Active:</span>
+                      {searchTerm && (
+                        <span className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
+                          Search: "{searchTerm}"
+                          <button onClick={() => setSearchTerm('')} className="hover:text-blue-900">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </span>
+                      )}
+                      {selectedCategory !== 'All' && (
+                        <span className="inline-flex items-center gap-2 px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm">
+                          Category: {selectedCategory}
+                          <button onClick={() => setSelectedCategory('All')} className="hover:text-green-900">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </span>
+                      )}
+                      {sortBy !== 'date' && (
+                        <span className="inline-flex items-center gap-2 px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-sm">
+                          Sort: {sortBy === 'duration' ? 'Duration' : sortBy === 'title' ? 'Title' : 'Organization'}
+                          <button onClick={() => setSortBy('date')} className="hover:text-purple-900">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Add Entry Card */}
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+              {/* Header */}
+              <div className="px-6 py-4 border-b border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold text-black">Add New Entry</h2>
+                  </div>
+                  <div className="hidden md:flex items-center text-gray-400">
+                    <Plus className="w-5 h-5" />
+                  </div>
                 </div>
               </div>
 
-              {/* Active Filters Display */}
-              {(searchTerm || selectedCategory !== 'All' || sortBy !== 'date') && (
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-xs font-medium text-gray-600">Active:</span>
-                    {searchTerm && (
-                      <span className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
-                        Search: "{searchTerm}"
-                        <button onClick={() => setSearchTerm('')} className="hover:text-blue-900">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </span>
-                    )}
-                    {selectedCategory !== 'All' && (
-                      <span className="inline-flex items-center gap-2 px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm">
-                        Category: {selectedCategory}
-                        <button onClick={() => setSelectedCategory('All')} className="hover:text-green-900">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </span>
-                    )}
-                    {sortBy !== 'date' && (
-                      <span className="inline-flex items-center gap-2 px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-sm">
-                        Sort: {sortBy === 'duration' ? 'Duration' : sortBy === 'title' ? 'Title' : 'Organization'}
-                        <button onClick={() => setSortBy('date')} className="hover:text-purple-900">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </span>
-                    )}
+              {/* Add Entry Content */}
+              <div className="p-6">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Plus className="w-8 h-8 text-gray-600" />
                   </div>
+                  <h3 className="text-lg font-semibold text-black mb-6">Log Your Hours</h3>
+                  <button
+                    onClick={() => setShowManualEntryModal(true)}
+                    className="w-full bg-gradient-to-r from-gray-900 to-black text-white px-6 py-3 rounded-lg hover:from-black hover:to-gray-900 transition-all text-sm font-medium flex items-center justify-center gap-2 shadow-sm hover:shadow-md transform hover:scale-105"
+                  >
+                    <Plus className="w-5 h-5" />
+                    Add Service Entry
+                  </button>
+                  <p className="text-xs text-gray-500 mt-3">
+                    Fill out service details including time, organization, and impact notes
+                  </p>
                 </div>
-              )}
+              </div>
             </div>
           </div>
 
