@@ -89,7 +89,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         {/* Header */}
         <div className="text-center mb-8">
           <h2 className="text-2xl font-bold text-black mb-2">
-            Wess-Serves
+            QuickServe
           </h2>
           <p className="text-gray-600">
             {isLogin ? 'Welcome back!' : 'Create your account'}

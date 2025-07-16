@@ -1,9 +1,10 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import Navigation from '@/components/Navigation'
+import ClientLayout from '@/components/ClientLayout'
 import { ServiceHoursProvider } from '@/lib/ServiceHoursContext'
 import { AuthProvider } from '@/lib/AuthContext'
 import { ProfileProvider } from '@/lib/ProfileContext'
+import { LoadingProvider } from '@/lib/LoadingContext'
 
 export const metadata: Metadata = {
   title: 'QuickServe | Service Hour Tracking',
@@ -24,17 +25,18 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="scroll-smooth">
-      <body className="min-h-screen bg-white antialiased">
-        <AuthProvider>
-          <ProfileProvider>
-            <ServiceHoursProvider>
-              <Navigation />
-              <main>
-                {children}
-              </main>
-            </ServiceHoursProvider>
-          </ProfileProvider>
-        </AuthProvider>
+      <body className="min-h-screen bg-canvas-50 antialiased">
+        <LoadingProvider>
+          <AuthProvider>
+            <ProfileProvider>
+              <ServiceHoursProvider>
+                <ClientLayout>
+                  {children}
+                </ClientLayout>
+              </ServiceHoursProvider>
+            </ProfileProvider>
+          </AuthProvider>
+        </LoadingProvider>
       </body>
     </html>
   )

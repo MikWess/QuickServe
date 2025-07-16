@@ -1,7 +1,7 @@
-# Wess-Serves Database Structure
+#  Database Structure
 
 ## Overview
-Wess-Serves uses **Google Cloud Firestore** as its NoSQL database. The database stores service hour records with user authentication integration through Firebase Auth.
+QuickServe uses **Google Cloud Firestore** as its NoSQL database. The database stores service hour records with user authentication integration through Firebase Auth.
 
 ## Database Configuration
 

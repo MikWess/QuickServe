@@ -61,10 +61,10 @@ function ProfileContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-white to-gray-50 px-4 py-6">
+      <div className="min-h-screen bg-gradient-to-br from-canvas-50 to-canvas-100 px-4 py-6">
         <div className="max-w-2xl mx-auto">
           <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-700"></div>
             <p className="mt-4 text-gray-600">Loading profile...</p>
           </div>
         </div>
@@ -73,16 +73,16 @@ function ProfileContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white to-gray-50 px-4 py-6">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-canvas-50 to-canvas-100 px-4 py-6">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-black mb-2">Profile</h1>
+          <h1 className="text-3xl font-bold text-neutral-900 mb-2">Profile</h1>
           <p className="text-gray-600">Your service journey</p>
         </div>
 
-        {/* Single Profile Card */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+        {/* Single Profile Card - Full Width */}
+        <div className="bg-neutral-50 rounded-xl shadow-lg overflow-hidden">
           {/* Profile Header with Picture */}
           <div className="text-center pt-8 pb-6 px-8">
             {/* Profile Picture */}
@@ -99,7 +99,7 @@ function ProfileContent() {
                 )}
               </div>
               <button 
-                className="absolute bottom-2 right-2 bg-black text-white rounded-full p-2 hover:bg-gray-800 transition-colors shadow-lg"
+                className="absolute bottom-2 right-2 bg-gray-700 text-white rounded-full p-2 hover:bg-gray-800 transition-colors shadow-lg"
                 title="Change profile picture"
               >
                 <Camera className="w-4 h-4" />
@@ -116,7 +116,7 @@ function ProfileContent() {
             {!isEditing ? (
               <button
                 onClick={() => setIsEditing(true)}
-                className="inline-flex items-center bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+                className="inline-flex items-center bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
               >
                 <Edit3 className="w-4 h-4 mr-2" />
                 Edit Profile
@@ -132,7 +132,7 @@ function ProfileContent() {
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center"
+                  className="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center"
                 >
                   {saving ? (
                     <>

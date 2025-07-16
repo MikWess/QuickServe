@@ -1,4 +1,4 @@
-# Wess-Serves 🚀
+# QuickServe 🚀
 
 A sleek and modern service hour tracking application built with Next.js, Firebase, and TypeScript.
 

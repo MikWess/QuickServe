@@ -28,10 +28,10 @@ export default function Navigation() {
   }
 
   return (
-    <nav className="border-b border-gray-200 bg-white px-6 py-4">
+    <nav className="border-b border-canvas-100 bg-neutral-50 px-6 py-4">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Logo */}
-        <div className="text-xl font-semibold text-black">
+        <div className="text-xl font-bold text-neutral-900">
           QuickServe
         </div>
         
@@ -41,10 +41,10 @@ export default function Navigation() {
             <Link
               key={item.href}
               href={item.href}
-              className={`text-sm transition-colors ${
+              className={`text-sm transition-colors font-medium ${
                 isActive(item.href)
-                  ? 'text-black font-medium'
-                  : 'text-gray-600 hover:text-black'
+                  ? 'text-gray-800 font-semibold'
+                  : 'text-gray-600 hover:text-gray-800'
               }`}
             >
               {item.label}
@@ -56,7 +56,7 @@ export default function Navigation() {
             <div className="flex items-center space-x-6">
               <button
                 onClick={logout}
-                className="bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-2 rounded-lg hover:from-red-700 hover:to-red-800 transition-all text-sm font-medium shadow-sm hover:shadow-md transform hover:scale-105"
+                className="bg-gray-700 text-white px-6 py-3 rounded text-sm font-semibold hover:bg-gray-800 transition-colors"
               >
                 Sign Out
               </button>
@@ -64,7 +64,7 @@ export default function Navigation() {
           ) : (
             <button
               onClick={() => setShowAuthModal(true)}
-              className="bg-black text-white px-4 py-2 rounded text-sm font-medium hover:bg-gray-800 transition-colors"
+              className="bg-gray-700 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-gray-800 transition-colors"
             >
               Get started
             </button>
@@ -86,15 +86,15 @@ export default function Navigation() {
 
       {/* Mobile Navigation Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden mt-4 pb-4 border-t border-gray-200">
+        <div className="md:hidden mt-4 pb-4 border-t border-canvas-100">
           <div className="flex flex-col space-y-4 pt-4">
             {user && navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`text-sm ${
+                className={`text-sm font-medium ${
                   isActive(item.href)
-                    ? 'text-black font-medium'
+                    ? 'text-gray-800 font-semibold'
                     : 'text-gray-600'
                 }`}
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -111,7 +111,7 @@ export default function Navigation() {
                     logout()
                     setIsMobileMenuOpen(false)
                   }}
-                  className="bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-2 rounded-lg hover:from-red-700 hover:to-red-800 transition-all text-sm font-medium shadow-sm"
+                  className="bg-gray-700 text-white px-6 py-3 rounded text-sm font-semibold hover:bg-gray-800 transition-colors"
                 >
                   Sign Out
                 </button>
@@ -122,7 +122,7 @@ export default function Navigation() {
                   setShowAuthModal(true)
                   setIsMobileMenuOpen(false)
                 }}
-                className="bg-black text-white px-4 py-2 rounded text-sm font-medium"
+                className="bg-gray-700 text-white px-4 py-2 rounded text-sm font-semibold"
               >
                 Get started
               </button>

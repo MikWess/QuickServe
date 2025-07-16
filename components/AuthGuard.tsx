@@ -27,30 +27,30 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-canvas-50">
         {/* Hero Section */}
         <section className="px-6 py-20">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-5xl md:text-6xl font-bold text-black mb-6">
+            <h1 className="text-5xl md:text-6xl font-black text-neutral-900 mb-6">
               Track Your
               <span className="block">Service Hours</span>
             </h1>
             
-            <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-              Easily log, manage, and track your community service hours with Wess-Serves. 
+            <p className="text-xl font-normal text-gray-600 mb-8 max-w-2xl mx-auto">
+              Easily log, manage, and track your community service hours with QuickServe. 
               Perfect for students, volunteers, and organizations.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button 
                 onClick={() => setShowAuthModal(true)}
-                className="bg-black text-white px-6 py-3 rounded text-sm font-medium hover:bg-gray-800 transition-colors"
+                className="bg-gray-700 text-white px-6 py-3 rounded text-sm font-semibold hover:bg-gray-800 transition-colors"
               >
-                Get started
+                Create Free Account
               </button>
               <button 
                 onClick={() => setShowAuthModal(true)}
-                className="border border-gray-300 bg-white hover:bg-gray-50 text-black px-6 py-3 rounded text-sm transition-colors"
+                className="border border-canvas-100 bg-neutral-50 hover:bg-canvas-100 text-neutral-900 px-6 py-3 rounded text-sm font-medium transition-colors"
               >
                 See features
               </button>
@@ -59,13 +59,13 @@ export default function AuthGuard({ children }: AuthGuardProps) {
         </section>
 
         {/* Features Section */}
-        <section className="px-6 py-20 bg-gray-50">
+        <section className="px-6 py-20 bg-canvas-100">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-16">
-              <h2 className="text-3xl font-bold text-black mb-4">
-                Why Choose Wess-Serves?
+              <h2 className="text-3xl font-bold text-neutral-900 mb-4">
+                Why Choose QuickServe?
               </h2>
-              <p className="text-lg text-gray-600">
+              <p className="text-lg font-normal text-gray-600">
                 Everything you need to track and manage your service hours
               </p>
             </div>
@@ -95,15 +95,15 @@ export default function AuthGuard({ children }: AuthGuardProps) {
               ].map((feature, index) => (
                 <div
                   key={index}
-                  className="bg-white p-6 rounded-lg border border-gray-200 text-center"
+                  className="bg-neutral-50 p-6 rounded-lg border border-canvas-100 text-center"
                 >
                   <div className="text-gray-400 mb-4 flex justify-center">
                     {feature.icon}
                   </div>
-                  <h3 className="text-lg font-semibold text-black mb-2">
+                  <h3 className="text-lg font-semibold text-neutral-900 mb-2">
                     {feature.title}
                   </h3>
-                  <p className="text-gray-600 text-sm">
+                  <p className="text-gray-600 text-sm font-normal">
                     {feature.description}
                   </p>
                 </div>
@@ -115,16 +115,16 @@ export default function AuthGuard({ children }: AuthGuardProps) {
         {/* CTA Section */}
         <section className="px-6 py-20">
           <div className="max-w-2xl mx-auto text-center">
-            <div className="bg-white border border-gray-200 p-12 rounded-lg">
-              <h2 className="text-3xl font-bold text-black mb-4">
+            <div className="bg-neutral-50 border border-canvas-100 p-12 rounded-lg">
+              <h2 className="text-3xl font-bold text-neutral-900 mb-4">
                 Ready to Start Tracking?
               </h2>
-              <p className="text-lg text-gray-600 mb-8">
-                Join thousands of volunteers already using Wess-Serves
+              <p className="text-lg font-normal text-gray-600 mb-8">
+                Join thousands of volunteers already using QuickServe
               </p>
               <button 
                 onClick={() => setShowAuthModal(true)}
-                className="bg-black text-white px-6 py-3 rounded text-sm font-medium hover:bg-gray-800 transition-colors"
+                className="bg-gray-700 text-white px-6 py-3 rounded text-sm font-semibold hover:bg-gray-800 transition-colors"
               >
                 Create Free Account
               </button>
@@ -133,12 +133,12 @@ export default function AuthGuard({ children }: AuthGuardProps) {
         </section>
 
         {/* Footer */}
-        <footer className="px-6 py-12 border-t border-gray-200">
+        <footer className="px-6 py-12 border-t border-canvas-100">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="text-xl font-semibold text-black mb-4">
-              Wess-Serves
+            <div className="text-xl font-bold text-neutral-900 mb-4">
+              QuickServe
             </div>
-            <p className="text-gray-600">
+            <p className="text-gray-600 font-normal">
               Built with ❤️ for the community service heroes
             </p>
           </div>
