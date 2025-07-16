@@ -1,0 +1,41 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Service Hours Collection Rules
+    match /serviceHours/{serviceHourId} {
+      // Users can only read their own service hours
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      
+      // Users can only create service hours for themselves
+      allow create: if request.auth != null 
+        && request.auth.uid == request.resource.data.userId
+        && validateServiceHour(request.resource.data);
+      
+      // Users can only update their own service hours
+      allow update: if request.auth != null 
+        && request.auth.uid == resource.data.userId
+        && validateServiceHour(request.resource.data);
+      
+      // Users can only delete their own service hours
+      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+    
+    // Helper function to validate service hour data structure
+    function validateServiceHour(data) {
+      return data.keys().hasAll(['userId', 'title', 'organization', 'startTime', 'duration', 'category', 'isCompleted'])
+        && data.userId is string
+        && data.title is string
+        && data.organization is string
+        && data.startTime is timestamp
+        && data.duration is number
+        && data.category is string
+        && data.isCompleted is bool
+        && (data.endTime == null || data.endTime is timestamp)
+        && (!data.keys().hasAny(['notes']) || data.notes is string)
+        && (!data.keys().hasAny(['supervisor']) || data.supervisor is string)
+        && (!data.keys().hasAny(['location']) || data.location is string)
+        && (!data.keys().hasAny(['description']) || data.description is string);
+    }
+  }
+} 
