@@ -27,15 +27,27 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isClient, setIsClient] = useState(false)
+
+  // Ensure we're on the client side to prevent hydration issues
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   useEffect(() => {
+    // Only set up auth listener on client side
+    if (!isClient) return
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user)
+      setLoading(false)
+    }, (error) => {
+      console.error('Auth state change error:', error)
       setLoading(false)
     })
 
     return unsubscribe
-  }, [])
+  }, [isClient])
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -77,7 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value = {
     user,
-    loading,
+    loading: loading || !isClient, // Keep loading until client-side
     signIn,
     signUp,
     signInWithGoogle,

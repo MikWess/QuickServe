@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react'
 import { ServiceHour, ServiceStats, ClockState } from './types'
 import { useAuth } from './AuthContext'
 import { 
@@ -27,6 +27,8 @@ interface ServiceHoursContextType {
   deleteServiceHour: (id: string) => Promise<void>
   clockIn: (title: string, organization: string, category: string) => void
   clockOut: (notes?: string) => Promise<void>
+  loading: boolean
+  error: string | null
 }
 
 const ServiceHoursContext = createContext<ServiceHoursContextType | undefined>(undefined)
@@ -45,53 +47,80 @@ const timestampToDate = (timestamp: any): Date => {
 export function ServiceHoursProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
   const [serviceHours, setServiceHours] = useState<ServiceHour[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [isClient, setIsClient] = useState(false)
   const [clockState, setClockState] = useState<ClockState>({
     isClocked: false,
     currentSession: null,
     clockInTime: null
   })
 
+  // Ensure we're on client side
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
   // Listen to service hours from Firestore
   useEffect(() => {
-    if (!user) {
+    if (!user || !isClient) {
       setServiceHours([])
+      setLoading(false)
       return
     }
 
-    console.log('Setting up Firestore query for user:', user.uid)
-    const q = query(
-      collection(db, 'serviceHours'),
-      where('userId', '==', user.uid)
-    )
+    setLoading(true)
+    setError(null)
 
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      console.log('Firestore query snapshot received, size:', querySnapshot.size)
-      const hours: ServiceHour[] = []
-      querySnapshot.forEach((doc) => {
-        const data = doc.data()
-        console.log('Document data:', doc.id, data)
-        hours.push({
-          id: doc.id,
-          ...data,
-          startTime: timestampToDate(data.startTime),
-          endTime: data.endTime ? timestampToDate(data.endTime) : null,
-        } as ServiceHour)
+    try {
+      const q = query(
+        collection(db, 'serviceHours'),
+        where('userId', '==', user.uid)
+      )
+
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        try {
+          const hours: ServiceHour[] = []
+          querySnapshot.forEach((doc) => {
+            const data = doc.data()
+            hours.push({
+              id: doc.id,
+              ...data,
+              startTime: timestampToDate(data.startTime),
+              endTime: data.endTime ? timestampToDate(data.endTime) : null,
+            } as ServiceHour)
+          })
+          // Sort by startTime descending on client side
+          hours.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
+          setServiceHours(hours)
+          setError(null)
+        } catch (err) {
+          console.error('Error processing service hours:', err)
+          setError('Failed to load service hours')
+        } finally {
+          setLoading(false)
+        }
+      }, (err) => {
+        console.error('Firestore subscription error:', err)
+        setError('Failed to connect to service hours')
+        setLoading(false)
       })
-      // Sort by startTime descending on client side
-      hours.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
-      console.log('Processed service hours:', hours.length)
-      setServiceHours(hours)
-    })
 
-    return unsubscribe
-  }, [user])
+      return unsubscribe
+    } catch (err) {
+      console.error('Error setting up Firestore query:', err)
+      setError('Failed to initialize service hours')
+      setLoading(false)
+    }
+  }, [user, isClient])
 
-  const calculateStats = (hours: ServiceHour[]): ServiceStats => {
+  // Memoize stats calculation for performance
+  const stats = useMemo((): ServiceStats => {
     const now = new Date()
     const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay())
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
 
-    const completedHours = hours.filter(h => h.isCompleted)
+    const completedHours = serviceHours.filter(h => h.isCompleted)
     const totalMinutes = completedHours.reduce((sum, h) => sum + h.duration, 0)
     
     const thisWeekMinutes = completedHours
@@ -107,18 +136,12 @@ export function ServiceHoursProvider({ children }: { children: React.ReactNode }
       thisWeekHours: Math.round(thisWeekMinutes / 60 * 10) / 10,
       thisMonthHours: Math.round(thisMonthMinutes / 60 * 10) / 10,
       completedSessions: completedHours.length,
-      currentStreak: 5 // Mock streak
+      currentStreak: 5 // Mock streak - implement proper calculation later
     }
-  }
-
-  const [stats, setStats] = useState<ServiceStats>(calculateStats(serviceHours))
-
-  useEffect(() => {
-    setStats(calculateStats(serviceHours))
   }, [serviceHours])
 
   const addServiceHour = async (serviceHour: Omit<ServiceHour, 'id'>) => {
-    if (!user) return
+    if (!user) throw new Error('User must be authenticated')
 
     try {
       await addDoc(collection(db, 'serviceHours'), {
@@ -130,12 +153,12 @@ export function ServiceHoursProvider({ children }: { children: React.ReactNode }
       })
     } catch (error) {
       console.error('Error adding service hour:', error)
-      throw error
+      throw new Error('Failed to add service hour')
     }
   }
 
   const updateServiceHour = async (id: string, updates: Partial<ServiceHour>) => {
-    if (!user) return
+    if (!user) throw new Error('User must be authenticated')
 
     try {
       const docRef = doc(db, 'serviceHours', id)
@@ -145,19 +168,19 @@ export function ServiceHoursProvider({ children }: { children: React.ReactNode }
       })
     } catch (error) {
       console.error('Error updating service hour:', error)
-      throw error
+      throw new Error('Failed to update service hour')
     }
   }
 
   const deleteServiceHour = async (id: string) => {
-    if (!user) return
+    if (!user) throw new Error('User must be authenticated')
 
     try {
       const docRef = doc(db, 'serviceHours', id)
       await deleteDoc(docRef)
     } catch (error) {
       console.error('Error deleting service hour:', error)
-      throw error
+      throw new Error('Failed to delete service hour')
     }
   }
 
@@ -217,7 +240,9 @@ export function ServiceHoursProvider({ children }: { children: React.ReactNode }
       updateServiceHour,
       deleteServiceHour,
       clockIn,
-      clockOut
+      clockOut,
+      loading,
+      error
     }}>
       {children}
     </ServiceHoursContext.Provider>

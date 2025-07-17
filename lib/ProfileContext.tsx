@@ -9,6 +9,7 @@ import { UserProfile } from './types'
 interface ProfileContextType {
   profile: UserProfile | null
   loading: boolean
+  error: string | null
   createProfile: (profileData: Partial<UserProfile>) => Promise<void>
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>
   refreshProfile: () => Promise<void>
@@ -19,23 +20,35 @@ const ProfileContext = createContext<ProfileContextType | undefined>(undefined)
 export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [isClient, setIsClient] = useState(false)
   const { user } = useAuth()
+
+  // Ensure we're on client side
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   // Load profile when user changes
   useEffect(() => {
+    if (!isClient) return
+
     if (user) {
       loadProfile()
     } else {
       setProfile(null)
       setLoading(false)
+      setError(null)
     }
-  }, [user])
+  }, [user, isClient])
 
   const loadProfile = async () => {
-    if (!user) return
+    if (!user || !isClient) return
 
     try {
       setLoading(true)
+      setError(null)
+      
       const profileDoc = await getDoc(doc(db, 'userProfiles', user.uid))
       
       if (profileDoc.exists()) {
@@ -52,6 +65,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Error loading profile:', error)
+      setError('Failed to load profile')
     } finally {
       setLoading(false)
     }
@@ -69,7 +83,12 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
       createdAt: new Date(),
     }
 
-    await createProfile(defaultProfile)
+    try {
+      await createProfile(defaultProfile)
+    } catch (error) {
+      console.error('Error creating default profile:', error)
+      setError('Failed to create profile')
+    }
   }
 
   const createProfile = async (profileData: Partial<UserProfile>) => {
@@ -94,9 +113,11 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
       })
 
       setProfile(newProfile)
+      setError(null)
     } catch (error) {
       console.error('Error creating profile:', error)
-      throw error
+      setError('Failed to create profile')
+      throw new Error('Failed to create profile')
     }
   }
 
@@ -115,9 +136,11 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
 
       await updateDoc(doc(db, 'userProfiles', user.uid), firestoreUpdates)
       setProfile(updatedProfile)
+      setError(null)
     } catch (error) {
       console.error('Error updating profile:', error)
-      throw error
+      setError('Failed to update profile')
+      throw new Error('Failed to update profile')
     }
   }
 
@@ -127,7 +150,8 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
 
   const value = {
     profile,
-    loading,
+    loading: loading || !isClient,
+    error,
     createProfile,
     updateProfile,
     refreshProfile,

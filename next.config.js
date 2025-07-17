@@ -9,9 +9,7 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
-  experimental: {
-    esmExternals: false,
-  },
+  // Remove experimental.esmExternals - it causes module loading issues
   reactStrictMode: true,
   swcMinify: true,
 }
