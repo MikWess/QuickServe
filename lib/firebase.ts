@@ -5,7 +5,6 @@ import { getFirestore } from "firebase/firestore"
 import { getAnalytics } from "firebase/analytics"
 
 // Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyA8fX6d7WOZ6GQb2G1qwj4jwtTUf70-1X4",
   authDomain: "wessmanservice.firebaseapp.com",
@@ -16,14 +15,57 @@ const firebaseConfig = {
   measurementId: "G-Y4HVDJS2NS"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+let app: any = null;
+let auth: any = null;
+let db: any = null;
+let analytics: any = null;
 
-// Initialize Firebase services
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+try {
+  // Initialize Firebase
+  app = initializeApp(firebaseConfig);
+  
+  // Initialize Firebase services with error handling
+  auth = getAuth(app);
+  db = getFirestore(app);
+  
+  // Initialize Analytics only in browser environment and with error handling
+  if (typeof window !== 'undefined') {
+    try {
+      analytics = getAnalytics(app);
+    } catch (error) {
+      console.warn('Analytics initialization failed:', error);
+      analytics = null;
+    }
+  }
+  
+  console.log('Firebase initialized successfully');
+} catch (error) {
+  console.error('Firebase initialization failed:', error);
+  // Create mock objects to prevent crashes
+  auth = {
+    currentUser: null,
+    onAuthStateChanged: () => () => {},
+    signInWithEmailAndPassword: () => Promise.reject('Firebase not available'),
+    createUserWithEmailAndPassword: () => Promise.reject('Firebase not available'),
+    signOut: () => Promise.reject('Firebase not available'),
+    signInWithPopup: () => Promise.reject('Firebase not available'),
+    updateProfile: () => Promise.reject('Firebase not available')
+  };
+  
+  db = {
+    collection: () => ({}),
+    doc: () => ({}),
+    query: () => ({}),
+    where: () => ({}),
+    orderBy: () => ({}),
+    onSnapshot: () => () => {},
+    addDoc: () => Promise.reject('Firebase not available'),
+    updateDoc: () => Promise.reject('Firebase not available'),
+    deleteDoc: () => Promise.reject('Firebase not available'),
+    getDocs: () => Promise.reject('Firebase not available'),
+    serverTimestamp: () => new Date()
+  };
+}
 
-// Initialize Analytics (only in browser environment)
-export const analytics = typeof window !== 'undefined' && typeof getAnalytics !== 'undefined' ? getAnalytics(app) : null;
-
+export { auth, db, analytics };
 export default app; 

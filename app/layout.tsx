@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import ClientLayout from '@/components/ClientLayout'
+import ErrorBoundary from '@/components/ErrorBoundary'
 import { ServiceHoursProvider } from '@/lib/ServiceHoursContext'
 import { AuthProvider } from '@/lib/AuthContext'
 import { ProfileProvider } from '@/lib/ProfileContext'
@@ -26,17 +27,19 @@ export default function RootLayout({
   return (
     <html lang="en" className="scroll-smooth">
       <body className="min-h-screen bg-canvas-50 antialiased">
-        <LoadingProvider>
-          <AuthProvider>
-            <ProfileProvider>
-              <ServiceHoursProvider>
-                <ClientLayout>
-                  {children}
-                </ClientLayout>
-              </ServiceHoursProvider>
-            </ProfileProvider>
-          </AuthProvider>
-        </LoadingProvider>
+        <ErrorBoundary>
+          <LoadingProvider>
+            <AuthProvider>
+              <ProfileProvider>
+                <ServiceHoursProvider>
+                  <ClientLayout>
+                    {children}
+                  </ClientLayout>
+                </ServiceHoursProvider>
+              </ProfileProvider>
+            </AuthProvider>
+          </LoadingProvider>
+        </ErrorBoundary>
       </body>
     </html>
   )
