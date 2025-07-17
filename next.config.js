@@ -12,23 +12,8 @@ const nextConfig = {
   experimental: {
     esmExternals: false,
   },
-  // Ensure proper SSR for Firebase auth
   reactStrictMode: true,
   swcMinify: true,
-  // Force dynamic rendering for auth pages
-  async headers() {
-    return [
-      {
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'no-cache, no-store, must-revalidate',
-          },
-        ],
-      },
-    ]
-  },
 }
 
 module.exports = nextConfig 

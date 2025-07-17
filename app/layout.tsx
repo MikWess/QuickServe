@@ -6,9 +6,6 @@ import { AuthProvider } from '@/lib/AuthContext'
 import { ProfileProvider } from '@/lib/ProfileContext'
 import { LoadingProvider } from '@/lib/LoadingContext'
 
-// Force dynamic rendering for Firebase auth
-export const dynamic = 'force-dynamic'
-
 export const metadata: Metadata = {
   title: 'QuickServe | Service Hour Tracking',
   description: 'Quickly track and manage your community service hours with ease',
