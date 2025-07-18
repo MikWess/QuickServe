@@ -12,8 +12,12 @@ const nextConfig = {
   // Remove experimental.esmExternals - it causes module loading issues
   reactStrictMode: true,
   swcMinify: true,
-  webpack: (config, { isServer }) => {
-    // Handle undici private field syntax errors
+  experimental: {
+    // Disable experimental features that cause issues
+    esmExternals: false,
+  },
+  webpack: (config, { isServer, webpack }) => {
+    // Enhanced handling for undici and Node.js modules
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -30,15 +34,41 @@ const nextConfig = {
         "assert": false,
         "os": false,
         "path": false,
+        "buffer": false,
+        "util": false,
+        "events": false,
+        "querystring": false,
       };
+
+      // More comprehensive external exclusions
+      config.externals = config.externals || [];
+      config.externals.push({
+        'undici': 'undici',
+        'firebase-admin': 'firebase-admin',
+        'firebase-functions': 'firebase-functions',
+      });
     }
-    
-    // Ignore undici in client-side builds to prevent private field syntax errors
-    config.externals = config.externals || [];
-    if (!isServer) {
-      config.externals.push('undici');
-    }
-    
+
+    // Add webpack plugins for better module handling
+    config.plugins.push(
+      new webpack.DefinePlugin({
+        'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
+      })
+    );
+
+    // Enhanced module resolution for Firebase
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': require('path').resolve(__dirname),
+    };
+
+    // Ignore specific modules that cause issues
+    config.ignoreWarnings = [
+      { module: /node_modules\/undici/ },
+      { module: /node_modules\/firebase/ },
+      /Critical dependency: the request of a dependency is an expression/,
+    ];
+
     return config;
   },
 }
